@@ -69,6 +69,12 @@
 ;; Enable LSP support by default in programming buffers
 (add-hook 'prog-mode-hook #'eglot-ensure)
 
+;;; Prettier
+(unless (package-installed-p 'prettier)
+  (package-install 'prettier))
+
+(add-hook 'after-init-hook #'global-prettier-mode)
+
 ;;; Inline static analysis
 
 ;; Enabled inline static analysis
