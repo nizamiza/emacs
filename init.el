@@ -223,7 +223,7 @@
 (save-place-mode t)
 (savehist-mode t)
 (recentf-mode t)
-(defalias 'yes-or-no #'y-or-n-p)
+(defalias 'yes-or-no-p #'y-or-n-p)
 
 ;; Store automatic customisation options elsewhere
 (setq custom-file (locate-user-emacs-file "custom.el"))
