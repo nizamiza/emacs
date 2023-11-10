@@ -20,6 +20,10 @@
 ;;              '("melpa-stable" . "https://stable.melpa.org/packages/") t)
 (package-initialize)
 
+;; Disable title bar
+(add-to-list 'default-frame-alist '(undecorated . t))
+(menu-bar-mode -1)
+
 ;; Load a custom theme
 (load-theme 'misterioso t)
 
@@ -68,6 +72,19 @@
 
 ;; Enable LSP support by default in programming buffers
 (add-hook 'prog-mode-hook #'eglot-ensure)
+
+;;; SWI-Prolog Support
+(unless (package-installed-p 'sweeprolog)
+  (package-install 'sweeprolog))
+
+;; Use `sweeprolog-mode' instead of `prolog-mode'
+(add-to-list 'auto-mode-alist '("\.plt?\'"  . sweeprolog-mode))
+
+;; Auto-completion
+(unless (package-installed-p 'auto-complete)
+  (package-install 'auto-complete))
+
+(ac-config-default)
 
 ;;; Prettier
 (unless (package-installed-p 'prettier)
