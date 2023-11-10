@@ -11,11 +11,37 @@
 (add-to-list 'package-archives  '("nongnu" . "https://elpa.nongnu.org/nongnu/"))
 (unless package-archive-contents  (package-refresh-contents))
 
+(require 'package)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+;; Comment/uncomment this line to enable MELPA Stable if desired.
+;; See `package-archive-priorities` and `package-pinned-packages`.
+;; Most users will not need or want to do this.
+;; (add-to-list 'package-archives
+;;              '("melpa-stable" . "https://stable.melpa.org/packages/") t)
+(package-initialize)
+
 ;; Load a custom theme
 (load-theme 'misterioso t)
 
 ;; Set default font face
 (set-face-attribute 'default nil :font "JetBrains Mono")
+
+;; Set indentation settings
+(setq-default tab-width 2)
+(setq-default indent-tabs-mode nil)
+
+;; Backup files
+(setq backup-directory-alist
+      '((".*" . "~/.emacs.d/backup")))
+
+;; Undo-tree
+(unless (package-installed-p 'undo-tree)
+  (package-install 'undo-tree))
+
+(global-undo-tree-mode)
+(setq undo-tree-auto-save-history t)
+(setq undo-tree-history-directory-alist
+      '(("." . "~/.emacs.d/undo")))
 
 ;;; Completion framework
 (unless (package-installed-p 'vertico)
