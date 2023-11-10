@@ -35,6 +35,7 @@
 (setq-default indent-tabs-mode nil)
 
 ;; Backup files
+(setq make-backup-files nil)
 (setq backup-directory-alist
       '((".*" . "~/.emacs.d/backup")))
 
