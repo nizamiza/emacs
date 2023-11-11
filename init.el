@@ -1,4 +1,4 @@
-;;; Personal configuration -*- lexical-binding: t -*-
+;; Personal configuration -*- lexical-binding: t -*-
 
 ;; Save the contents of this file under ~/.emacs.d/init.el
 ;; Do not forget to use Emacs' built-in help system:
@@ -6,60 +6,56 @@
 ;; need to know about Emacs (what commands exist, what functions do,
 ;; what variables specify), the help system can provide.
 
-;; Add the NonGNU ELPA package archive
+;;; Initialize package
 (require 'package)
 (add-to-list 'package-archives  '("nongnu" . "https://elpa.nongnu.org/nongnu/"))
-(unless package-archive-contents  (package-refresh-contents))
-
-(require 'package)
-(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
-;; Comment/uncomment this line to enable MELPA Stable if desired.
-;; See `package-archive-priorities` and `package-pinned-packages`.
-;; Most users will not need or want to do this.
-;; (add-to-list 'package-archives
-;;              '("melpa-stable" . "https://stable.melpa.org/packages/") t)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
 (package-initialize)
 
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+(eval-and-compile
+  (setq use-package-always-ensure t))
+
+;;; Color theme
+(unless (package-installed-p 'modus-themes)
+  (package-install 'modus-themes))
+
+(use-package modus-themes
+  :bind ("C-c t" . modus-themes-toggle))
+
+(load-theme 'modus-vivendi t)
+;;; Options
+
 ;; Disable title bar
-(add-to-list 'default-frame-alist '(undecorated . t))
 (menu-bar-mode -1)
 
-;; Load a custom theme
-(load-theme 'misterioso t)
+;; Disable startup screen
+(setq inhibit-startup-message t
+      visible-bell nil)
 
-;; Set default font face
-(set-face-attribute 'default nil :font "JetBrains Mono")
+;; Disable scroll bar
+(scroll-bar-mode -1)
+
+;; Remember recent stuff
+(recentf-mode t)
+(setq history-length 25)
+
+(savehist-mode t)
+(save-place-mode t)
 
 ;; Set indentation settings
 (setq-default tab-width 2)
 (setq-default indent-tabs-mode nil)
 
 ;; Backup files
-(setq make-backup-files nil)
+(setq auto-save-default nil)
 (setq backup-directory-alist
       '((".*" . "~/.emacs.d/backup")))
 
-;; Undo-tree
-(unless (package-installed-p 'undo-tree)
-  (package-install 'undo-tree))
-
-(global-undo-tree-mode)
-(setq undo-tree-auto-save-history t)
-(setq undo-tree-history-directory-alist
-      '(("." . "~/.emacs.d/undo")))
-
-;;; Completion framework
-(unless (package-installed-p 'vertico)
-  (package-install 'vertico))
-
-;; Enable completion by narrowing
-(vertico-mode t)
-
-;;; Extended completion utilities
-(unless (package-installed-p 'consult)
-  (package-install 'consult))
-(global-set-key [rebind switch-to-buffer] #'consult-buffer)
-(global-set-key (kbd "C-c i") #'consult-imenu)
+;; Auto-sync files
+(global-auto-revert-mode t)
 
 ;; Enable line numbering by default
 (global-display-line-numbers-mode t)
@@ -67,150 +63,109 @@
 ;; Automatically pair parentheses
 (electric-pair-mode t)
 
-;;; LSP Support
-(unless (package-installed-p 'eglot)
-  (package-install 'eglot))
+;;; Packages
+(use-package prettier
+  :ensure t
+  :hook (after-init . global-prettier-mode))
 
-;; Enable LSP support by default in programming buffers
-(add-hook 'prog-mode-hook #'eglot-ensure)
+(use-package auto-complete
+  :ensure t
+  :config
+  (ac-config-default))
 
-;;; SWI-Prolog Support
-(unless (package-installed-p 'sweeprolog)
-  (package-install 'sweeprolog))
+(use-package undo-tree
+  :ensure t
+  :config
+  (global-undo-tree-mode)
+  (setq undo-tree-auto-save-history t)
+  (setq undo-tree-history-directory-alist
+        '(("." . "~/.emacs.d/undo"))))
 
-;; Use `sweeprolog-mode' instead of `prolog-mode'
-(add-to-list 'auto-mode-alist '("\.plt?\'"  . sweeprolog-mode))
+(use-package vertico
+  :ensure t
+  :config
+  (vertico-mode t))
 
-;; Auto-completion
-(unless (package-installed-p 'auto-complete)
-  (package-install 'auto-complete))
+(use-package consult
+  :ensure t
+  :bind
+  ([rebind switch-to-buffer] . consult-buffer)
+  ("C-c i" . consult-imenu))
 
-(ac-config-default)
+(use-package eglot
+  :ensure t
+  :hook (prog-mode . eglot-ensure))
 
-;;; Prettier
-(unless (package-installed-p 'prettier)
-  (package-install 'prettier))
+(use-package sweeprolog
+  :ensure t
+  :mode ("\\.pl\\'" . sweeprolog-mode))
 
-(add-hook 'after-init-hook #'global-prettier-mode)
+(use-package corfu
+  :ensure t
+  :config
+  (setq corfu-auto t)
+  :hook (prog-mode . corfu-mode))
 
-;;; Inline static analysis
+(use-package magit
+  :ensure t
+  :bind ("C-c g" . magit-status))
 
-;; Enabled inline static analysis
-(add-hook 'prog-mode-hook #'flymake-mode)
+(use-package diff-hl
+  :ensure t
+  :hook prog-mode)
 
-;; Display messages when idle, without prompting
-(setq help-at-pt-display-when-idle t)
+(use-package elixir-mode
+  :ensure t)
 
-;; Message navigation bindings
-(with-eval-after-load 'flymake
-  (define-key flymake-mode-map (kbd "C-c n") #'flymake-goto-next-error)
-  (define-key flymake-mode-map (kbd "C-c p") #'flymake-goto-prev-error))
+(use-package go-mode
+  :ensure t)
 
-;;; Pop-up completion
-(unless (package-installed-p 'corfu)
-  (package-install 'corfu))
+(use-package json-mode
+  :ensure t)
 
-;; Enable autocompletion by default in programming buffers
-(add-hook 'prog-mode-hook #'corfu-mode)
+(use-package kotlin-mode
+  :ensure t)
 
-;; Enable automatic completion.
-(setq corfu-auto t)
+(use-package lua-mode
+  :ensure t)
 
-;;; Git client
-(unless (package-installed-p 'magit)
-  (package-install 'magit))
+(use-package rust-mode
+  :ensure t)
 
-;; Bind the `magit-status' command to a convenient key.
-(global-set-key (kbd "C-c g") #'magit-status)
+(use-package sly
+  :ensure t)
 
-;;; Indication of local VCS changes
-(unless (package-installed-p 'diff-hl)
-  (package-install 'diff-hl))
+(use-package typescript-mode
+  :ensure t)
 
-;; Enable `diff-hl' support by default in programming buffers
-(add-hook 'prog-mode-hook #'diff-hl-mode)
+(use-package yaml-mode
+  :ensure t)
 
-;;; Elixir Support
-(unless (package-installed-p 'elixir-mode)
-  (package-install 'elixir-mode))
+(use-package markdown-mode
+  :ensure t)
 
-;;; Go Support
-(unless (package-installed-p 'go-mode)
-  (package-install 'go-mode))
+(use-package org
+  :ensure t
+  :bind
+  ("C-c l" . org-store-link)
+  ("C-c a" . org-agenda)
+  :config
+  (use-package org-contrib
+    :ensure t))
 
-;;; JSON Support
-(unless (package-installed-p 'json-mode)
-  (package-install 'json-mode))
+(use-package crdt
+  :ensure t)
 
-;;; Kotlin Support
-(unless (package-installed-p 'kotlin-mode)
-  (package-install 'kotlin-mode))
+(use-package editorconfig
+  :ensure t
+  :config
+  (editorconfig-mode t))
 
-;;; Lua Support
-(unless (package-installed-p 'lua-mode)
-  (package-install 'lua-mode))
-
-;;; Rust Support
-(unless (package-installed-p 'rust-mode)
-  (package-install 'rust-mode))
-
-;;; Additional Lisp support
-(unless (package-installed-p 'sly)
-  (package-install 'sly))
-
-;;; Typescript Support
-(unless (package-installed-p 'typescript-mode)
-  (package-install 'typescript-mode))
-
-;;; YAML Support
-(unless (package-installed-p 'yaml-mode)
-  (package-install 'yaml-mode))
-
-;;; Markdown support
-(unless (package-installed-p 'markdown-mode)
-  (package-install 'markdown-mode))
-
-;;; Outline-based notes management and organizer
-(global-set-key (kbd "C-c l") #'org-store-link)
-(global-set-key (kbd "C-c a") #'org-agenda)
-
-;;; Additional Org-mode related functionality
-(unless (package-installed-p 'org-contrib)
-  (package-install 'org-contrib))
-
-;;; Collaborative Editing
-(unless (package-installed-p 'crdt)
-  (package-install 'crdt))
-
-;;; IRC Client
-
-;; Connect to Librea
-(setq rcirc-server-alist
-      '(("irc.libera.chat" :channels ("#emacs")
-         :port 6697 :encryption tls)))
-
-;; Set your IRC nick
-(setq rcirc-default-nick "niza")
-(add-hook 'rcirc-mode-hook #'rcirc-track-minor-mode)
-(add-hook 'rcirc-mode-hook #'rcirc-omit-mode)
-
-;;; EditorConfig support
-(unless (package-installed-p 'editorconfig)
-  (package-install 'editorconfig))
-
-;; Enable EditorConfig
-(editorconfig-mode t)
-
-;;; Jump to arbitrary positions
-(unless (package-installed-p 'avy)
-  (package-install 'avy))
-(global-set-key (kbd "C-c z") #'avy-goto-word-1)
-
-;; Jump to any open window or frame
-(setq avy-all-windows 'all-frames)
-
-;; Enable CUA key bindings
-;; (cua-mode t)
+(use-package avy
+  :ensure t
+  :bind ("C-c z" . avy-goto-word-1)
+  :config
+  (setq avy-all-windows 'all-frames))
 
 ;; Miscellaneous options
 (setq-default major-mode
@@ -221,12 +176,9 @@
 (setq confirm-kill-emacs #'yes-or-no-p)
 (setq window-resize-pixelwise t)
 (setq frame-resize-pixelwise t)
-(save-place-mode t)
-(savehist-mode t)
-(recentf-mode t)
+
 (defalias 'yes-or-no-p #'y-or-n-p)
 
-;; Store automatic customisation options elsewhere
 (setq custom-file (locate-user-emacs-file "custom.el"))
 (when (file-exists-p custom-file)
   (load custom-file))
