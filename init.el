@@ -192,6 +192,8 @@
 
 (use-package markdown-mode)
 
+(use-package web-mode)
+
 (use-package org
   :bind
   ("C-c l" . org-store-link)
