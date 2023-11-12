@@ -1,5 +1,12 @@
 ;; Personal configuration -*- lexical-binding: t -*-
 
+;; Originally based on configuration generated via:
+;; https://emacs.amodernist.com/
+
+;; Modified and tailored for Niza Toshpulatov's <niza@hey.com>
+;; needs by Niza himself. This config is primarily oriented
+;; towards web development.
+
 ;; Save the contents of this file under ~/.emacs.d/init.el
 ;; Do not forget to use Emacs' built-in help system:
 ;; Use C-h C-h to get an overview of all help commands.  All you
@@ -10,9 +17,6 @@
 
 ;; Disable title bar
 (menu-bar-mode -1)
-
-;; Set cursor style
-(setq-default cursor-type 'hollow)
 
 ;; Disable startup screen
 (setq inhibit-startup-message t
@@ -32,16 +36,19 @@
 (setq-default tab-width 2)
 (setq-default indent-tabs-mode nil)
 
-;; Backup files
-(setq auto-save-default nil)
+;; Set backup and auto-save files location
+(setq auto-save-file-name-transforms
+      `((".*" "~/.emacs.d/auto-save/" t)))
+
 (setq backup-directory-alist
       '((".*" . "~/.emacs.d/backup")))
 
-;; Auto-sync files
+;; Auto-sync files when they change on disk
 (global-auto-revert-mode t)
 
-;; Enable line numbering by default
+;; Enable line and column numbering
 (global-display-line-numbers-mode t)
+(column-number-mode)
 
 ;; Automatically pair parentheses
 (electric-pair-mode t)
@@ -50,52 +57,82 @@
 (setq display-time-24hr-format t)
 (display-time-mode t)
 
-;; Miscellaneous options
+;; Guess major mode from file name
 (setq-default major-mode
-              (lambda () ; guess major mode from file name
+              (lambda ()
                 (unless buffer-file-name
                   (let ((buffer-file-name (buffer-name)))
                     (set-auto-mode)))))
 
+;; Alias 'yes or no' confirmations to 'y or n'
 (setq confirm-kill-emacs #'yes-or-no-p)
-(setq window-resize-pixelwise t)
-(setq frame-resize-pixelwise t)
-
 (defalias 'yes-or-no-p #'y-or-n-p)
 
-;;; Initialize package
+;;; Initialize package manager
 
 (require 'package)
 (add-to-list 'package-archives  '("nongnu" . "https://elpa.nongnu.org/nongnu/"))
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
 (package-initialize)
 
+;; Install use-package
+;; use-package provides better interface over package management than
+;; the default package manager that ships with Emacs. Thanks to its
+;; non-blocking architecture, it also improves load times dramatically.
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
 
 (require 'use-package)
-(setq use-package-always-ensure t)
+(setq use-package-always-ensure t) ; always install packages if missing
 
-;;; Color theme
+;;; Set color theme
 
 (use-package modus-themes
   :bind ("C-c t" . modus-themes-toggle))
 
+;; Custom function for detecting macOS appearance
+(defun set-color-theme-based-on-appearance ()
+  (let ((macos-appearance (string-trim (shell-command-to-string "osascript -e 'tell application \"System Events\" to tell appearance preferences to return dark mode'"))))
+    (if (string= macos-appearance "true")
+        (load-theme 'modus-vivendi t)
+      (load-theme 'modus-operandi t))))
+
+;; Make sure that theme is installed
 (unless (package-installed-p 'modus-themes)
   (package-install 'modus-themes))
 
-(load-theme 'modus-vivendi t)
+;; Set theme based on appearance
+(when (package-installed-p 'modus-themes)
+  (set-color-theme-based-on-appearance))
 
-;;; Aesthetics
+;;; UI packages
 
 (use-package doom-modeline
   :init (doom-modeline-mode 1))
 
-;;; Packages
+(use-package which-key
+  :diminish
+  :init (which-key-mode))
 
-(use-package prettier
-  :hook (after-init . global-prettier-mode))
+;;; Other packages
+
+(use-package format-all
+  :commands format-all-mode
+  :hook
+  (prog-mode . format-all-mode)
+  (format-all . format-all-ensure-formatter)
+  :config
+  (setq-default format-all-formatters '(("JavaScript" (prettierd))
+                                        ("TypeScript" (prettierd))
+                                        ("HTML" (prettierd))
+                                        ("CSS" (prettierd))
+                                        ("JSX" (prettierd))
+                                        ("TSX" (prettierd))
+                                        ("JSON" (prettierd))
+                                        ("YAML" (prettierd))
+                                        ("Python" (black))
+                                        ("Markdown" (prettierd)))))
 
 (use-package auto-complete
   :config
@@ -116,6 +153,7 @@
   :bind
   ([rebind switch-to-buffer] . consult-buffer)
   ("C-c i" . consult-imenu)
+  ("C-x b" . consult-buffer)
   :config
   (dolist (src consult-buffer-sources)
     (unless (eq src 'consult--source-buffer)
