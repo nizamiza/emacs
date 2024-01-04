@@ -136,7 +136,8 @@
 
 (use-package auto-complete
   :config
-  (ac-config-default))
+  (ac-config-default)
+  (define-key ac-completing-map "\r" nil))
 
 (use-package undo-tree
   :config
@@ -154,6 +155,8 @@
   ([rebind switch-to-buffer] . consult-buffer)
   ("C-c i" . consult-imenu)
   ("C-x b" . consult-buffer)
+  ("M-." . xref-find-definitions)
+  ("M-," . xref-find-references)
   :config
   (dolist (src consult-buffer-sources)
     (unless (eq src 'consult--source-buffer)
